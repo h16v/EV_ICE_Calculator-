@@ -1,4 +1,5 @@
 library(shiny)
+library(ggplot2)
 
 ui <- fluidPage(
 
@@ -29,6 +30,11 @@ ui <- fluidPage(
 
       hr(),
 
+      h4("Wykres (donut)"),
+      plotOutput("donut"),
+
+      hr(),
+
       h4("Podgląd danych"),
       tableOutput("table")
 
@@ -44,7 +50,6 @@ server <- function(input, output) {
 
     trip <- read.csv(input$file$datapath)
 
-    # kontrola czy kolumny istnieją
     validate(
       need("Average.fuel.consumption.in.l.100km" %in% names(trip),
            "Brak kolumny: Average.fuel.consumption.in.l.100km"),
@@ -52,7 +57,6 @@ server <- function(input, output) {
            "Brak kolumny: Mileage.in.km")
     )
 
-    # obliczenia
     trip$ICE_share <- trip$Average.fuel.consumption.in.l.100km / input$b
     trip$ICE_share <- pmax(0, pmin(1, trip$ICE_share))
 
@@ -72,11 +76,37 @@ server <- function(input, output) {
 
     paste0(
       "Całkowity przebieg: ", round(total_km, 1), " km\n",
-      "Benzyna (ICE): ", round(total_ice, 1), " km (",
+      "ICE: ", round(total_ice, 1), " km (",
       round(total_ice / total_km * 100, 1), "%)\n",
-      "Elektrycznie (EV): ", round(total_ev, 1), " km (",
+      "EV: ", round(total_ev, 1), " km (",
       round(total_ev / total_km * 100, 1), "%)"
     )
+  })
+
+  output$donut <- renderPlot({
+
+    trip <- data_processed()
+
+    total_km <- sum(trip$Mileage.in.km, na.rm = TRUE)
+    total_ice <- sum(trip$ICE_km, na.rm = TRUE)
+    total_ev <- sum(trip$EV_km, na.rm = TRUE)
+
+    df <- data.frame(
+      type = c("ICE", "EV"),
+      value = c(total_ice, total_ev)
+    )
+
+    df$percent <- df$value / sum(df$value) * 100
+
+    ggplot(df, aes(x = 2, y = value, fill = type)) +
+      geom_bar(stat = "identity", width = 1, color = "white") +
+      coord_polar(theta = "y") +
+      xlim(0.5, 2.5) +
+      theme_void() +
+      geom_text(aes(label = paste0(round(percent, 1), "%")),
+                position = position_stack(vjust = 0.5)) +
+      scale_fill_manual(values = c("ICE" = "orange", "EV" = "green")) +
+      ggtitle("Udział przebiegu ICE vs EV")
   })
 
   output$table <- renderTable({
