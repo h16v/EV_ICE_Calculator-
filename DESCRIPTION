@@ -1,0 +1,8 @@
+Package: EVApp
+Type: Package
+Title: EV ICE Shiny App
+Version: 1.0
+
+Imports:
+    shiny,
+    ggplot2
