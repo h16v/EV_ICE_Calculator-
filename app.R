@@ -3,17 +3,17 @@ library(ggplot2)
 
 ui <- fluidPage(
 
-  titlePanel("Proporcja użycia silnika spalinowego i elektrycznego"),
+  titlePanel("Proporcja użycia silnika spalinowego i elektrycznego dla Skoda Kodiaq iV (PHEV)"),
 
   sidebarLayout(
     sidebarPanel(
 
-      fileInput("file", "Wgraj plik CSV"),
+      fileInput("file", "Wgraj plik CSV z aplikacji MySkoda"),
 
       numericInput(
         "b",
-        "Maksymalne spalanie benzyny (l/100 km)",
-        value = 6.5,
+        "Maksymalne spalanie benzyny (l/100 km) - u mnie z modelu wychodzi 7.3",
+        value = 7.3,
         min = 0.1
       ),
 
