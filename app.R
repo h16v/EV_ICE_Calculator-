@@ -3,7 +3,7 @@ library(ggplot2)
 
 ui <- fluidPage(
 
-  titlePanel("EV / ICE Trip Calculator"),
+  titlePanel("Proporcja użycia silnika spalinowego i elektrycznego"),
 
   sidebarLayout(
     sidebarPanel(
@@ -12,7 +12,7 @@ ui <- fluidPage(
 
       numericInput(
         "b",
-        "Maksymalne spalanie ICE (l/100 km)",
+        "Maksymalne spalanie benzyny (l/100 km)",
         value = 6.5,
         min = 0.1
       ),
@@ -30,8 +30,8 @@ ui <- fluidPage(
 
       hr(),
 
-      h4("Wykres (donut)"),
-      plotOutput("donut"),
+      h4("Wykres kołowy"),
+      plotOutput("Wykres"),
 
       hr(),
 
@@ -105,8 +105,8 @@ server <- function(input, output) {
       theme_void() +
       geom_text(aes(label = paste0(round(percent, 1), "%")),
                 position = position_stack(vjust = 0.5)) +
-      scale_fill_manual(values = c("ICE" = "orange", "EV" = "green")) +
-      ggtitle("Udział przebiegu ICE vs EV")
+      scale_fill_manual(values = c("ICE" = "orange", "EV" = "darkgreen")) +
+      ggtitle("Udział przebiegu benzynowego vs elektrycznego")
   })
 
   output$table <- renderTable({
