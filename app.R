@@ -3,38 +3,32 @@ library(ggplot2)
 
 ui <- fluidPage(
 
-  titlePanel(
-    "Proporcja użycia silnika spalinowego i elektrycznego dla Skoda Kodiaq iV (PHEV)"
-  ),
+  titlePanel("EV / ICE Trip Calculator"),
 
   sidebarLayout(
-
     sidebarPanel(
 
-      fileInput(
-        "file",
-        "Wgraj plik CSV z aplikacji MySkoda"
-      ),
+      fileInput("file", "Wgraj plik CSV"),
 
       numericInput(
         "b",
-        "Referencyjne spalanie benzyny przy 0 kWh/100 km (l/100 km)",
+        "Referencyjne spalanie ICE (l/100 km)",
         value = 7.3,
-        min = 0.1,
+        min = 0.1
+      ),
+
+      numericInput(
+        "ev_threshold",
+        "Próg zużycia prądu dla przejazdu ICE (kWh/100 km)",
+        value = 1,
+        min = 0,
         step = 0.1
       ),
 
-      actionButton(
-        "run",
-        "Oblicz"
-      ),
+      actionButton("run", "Oblicz"),
 
       hr(),
-
-      downloadButton(
-        "download",
-        "Pobierz wynik CSV"
-      )
+      downloadButton("download", "Pobierz wynik CSV")
     ),
 
     mainPanel(
@@ -44,19 +38,24 @@ ui <- fluidPage(
 
       hr(),
 
-      h4("Wykres kołowy"),
+      h4("Liczba przejazdów"),
+      verbatimTextOutput("trip_counts"),
+
+      hr(),
+
+      h4("Wykres (donut)"),
       plotOutput("donut"),
 
       hr(),
 
       h4("Podgląd danych"),
       tableOutput("table")
+
     )
   )
 )
 
-
-server <- function(input, output, session) {
+server <- function(input, output) {
 
   data_processed <- eventReactive(input$run, {
 
@@ -68,92 +67,161 @@ server <- function(input, output, session) {
     )
 
     validate(
-
       need(
         "Average.fuel.consumption.in.l.100km" %in% names(trip),
         "Brak kolumny: Average.fuel.consumption.in.l.100km"
       ),
-
       need(
         "Mileage.in.km" %in% names(trip),
         "Brak kolumny: Mileage.in.km"
+      ),
+      need(
+        "Average.electric.consumption.in.kWh.100km" %in% names(trip),
+        "Brak kolumny: Average.electric.consumption.in.kWh.100km"
       )
     )
-
-    trip$Average.fuel.consumption.in.l.100km <-
-      as.numeric(trip$Average.fuel.consumption.in.l.100km)
 
     trip$Mileage.in.km <-
       as.numeric(trip$Mileage.in.km)
 
-    # Udział ICE oszacowany na podstawie spalania benzyny
+    trip$Average.fuel.consumption.in.l.100km <-
+      as.numeric(trip$Average.fuel.consumption.in.l.100km)
+
+    trip$Average.electric.consumption.in.kWh.100km <-
+      as.numeric(trip$Average.electric.consumption.in.kWh.100km)
+
+
+    # ------------------------------------------------------
+    # Dotychczasowa metoda liczenia przebiegu ICE / EV
+    # ------------------------------------------------------
+
     trip$ICE_share <-
       trip$Average.fuel.consumption.in.l.100km / input$b
 
-    # Ograniczenie wyniku do zakresu 0-1
     trip$ICE_share <-
       pmax(0, pmin(1, trip$ICE_share))
 
-    # Szacowany ekwiwalent kilometrów ICE
     trip$ICE_km <-
       trip$Mileage.in.km * trip$ICE_share
 
-    # Pozostała część dystansu
     trip$EV_km <-
       trip$Mileage.in.km - trip$ICE_km
+
+
+    # ------------------------------------------------------
+    # Klasyfikacja rodzaju przejazdu
+    # ------------------------------------------------------
+
+    trip$drive_type <- ifelse(
+      trip$Average.fuel.consumption.in.l.100km == 0,
+      "EV",
+      ifelse(
+        trip$Average.electric.consumption.in.kWh.100km <= input$ev_threshold,
+        "ICE",
+        "Mixed"
+      )
+    )
 
     trip
   })
 
 
+  # --------------------------------------------------------
+  # Podsumowanie kilometrów
+  # --------------------------------------------------------
+
   output$summary <- renderText({
 
     trip <- data_processed()
 
-    total_km <-
-      sum(trip$Mileage.in.km, na.rm = TRUE)
+    total_km <- sum(
+      trip$Mileage.in.km,
+      na.rm = TRUE
+    )
 
-    total_ice <-
-      sum(trip$ICE_km, na.rm = TRUE)
+    total_ice <- sum(
+      trip$ICE_km,
+      na.rm = TRUE
+    )
 
-    total_ev <-
-      sum(trip$EV_km, na.rm = TRUE)
-
-    ice_percent <-
-      total_ice / total_km * 100
-
-    ev_percent <-
-      total_ev / total_km * 100
+    total_ev <- sum(
+      trip$EV_km,
+      na.rm = TRUE
+    )
 
     paste0(
       "Całkowity przebieg: ",
       round(total_km, 1),
-      " km\n\n",
+      " km\n",
 
       "ICE: ",
       round(total_ice, 1),
       " km (",
-      round(ice_percent, 1),
+      round(total_ice / total_km * 100, 1),
       "%)\n",
 
       "EV: ",
       round(total_ev, 1),
       " km (",
-      round(ev_percent, 1),
+      round(total_ev / total_km * 100, 1),
       "%)"
     )
   })
 
 
+  # --------------------------------------------------------
+  # Liczba przejazdów EV / ICE / Mixed
+  # --------------------------------------------------------
+
+  output$trip_counts <- renderText({
+
+    trip <- data_processed()
+
+    n_ev <- sum(
+      trip$drive_type == "EV",
+      na.rm = TRUE
+    )
+
+    n_ice <- sum(
+      trip$drive_type == "ICE",
+      na.rm = TRUE
+    )
+
+    n_mixed <- sum(
+      trip$drive_type == "Mixed",
+      na.rm = TRUE
+    )
+
+    n_total <- sum(
+      !is.na(trip$drive_type)
+    )
+
+    paste0(
+      "Wszystkie przejazdy: ", n_total, "\n",
+      "Tylko EV: ", n_ev, "\n",
+      "Tylko ICE: ", n_ice, "\n",
+      "Mieszane: ", n_mixed
+    )
+  })
+
+
+  # --------------------------------------------------------
+  # Wykres
+  # --------------------------------------------------------
+
   output$donut <- renderPlot({
 
     trip <- data_processed()
 
-    total_ice <-
-      sum(trip$ICE_km, na.rm = TRUE)
+    total_ice <- sum(
+      trip$ICE_km,
+      na.rm = TRUE
+    )
 
-    total_ev <-
-      sum(trip$EV_km, na.rm = TRUE)
+    total_ev <- sum(
+      trip$EV_km,
+      na.rm = TRUE
+    )
 
     df <- data.frame(
       type = c("ICE", "EV"),
@@ -172,7 +240,8 @@ server <- function(input, output, session) {
       )
     ) +
 
-      geom_col(
+      geom_bar(
+        stat = "identity",
         width = 1,
         color = "white"
       ) +
@@ -186,6 +255,8 @@ server <- function(input, output, session) {
         2.5
       ) +
 
+      theme_void() +
+
       geom_text(
         aes(
           label = paste0(
@@ -195,36 +266,25 @@ server <- function(input, output, session) {
         ),
         position = position_stack(
           vjust = 0.5
-        ),
-        size = 5
+        )
       ) +
 
       scale_fill_manual(
         values = c(
           "ICE" = "orange",
-          "EV" = "darkgreen"
-        ),
-        labels = c(
-          "ICE" = "Benzyna",
-          "EV" = "Elektryczny"
+          "EV" = "green"
         )
       ) +
 
-      labs(
-        title = "Szacowany udział przebiegu ICE vs EV",
-        fill = NULL
-      ) +
-
-      theme_void() +
-
-      theme(
-        plot.title = element_text(
-          hjust = 0.5
-        ),
-        legend.position = "bottom"
+      ggtitle(
+        "Udział przebiegu ICE vs EV"
       )
   })
 
+
+  # --------------------------------------------------------
+  # Podgląd danych
+  # --------------------------------------------------------
 
   output$table <- renderTable({
 
@@ -236,6 +296,10 @@ server <- function(input, output, session) {
     )
   })
 
+
+  # --------------------------------------------------------
+  # Pobieranie CSV
+  # --------------------------------------------------------
 
   output$download <- downloadHandler(
 
@@ -253,7 +317,6 @@ server <- function(input, output, session) {
     }
   )
 }
-
 
 shinyApp(
   ui = ui,
