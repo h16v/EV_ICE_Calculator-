@@ -60,8 +60,8 @@ sidebarPanel(
 
   fileInput(
     "file",
-    "1. Wybierz plik CSV / Browse CSV file",
-    buttonLabel = "Browse",
+    "Wybierz plik CSV / Browse CSV file",
+    buttonLabel = "1. Browse",
     placeholder = "Brak pliku / No file selected"
   ),
 
