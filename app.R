@@ -32,30 +32,56 @@ ui <- fluidPage(
     # PANEL LEWY / LEFT PANEL
     # ======================================================
 
-    sidebarPanel(
+sidebarPanel(
 
-      fileInput(
-        "file",
-        "Wgraj plik CSV z aplikacji MySkoda / Upload a CSV file from the MySkoda app"
-      ),
+  tags$style(HTML("
+    .btn-browse {
+      background-color: darkgreen !important;
+      color: white !important;
+      border: 2px solid darkgreen !important;
+      font-weight: bold;
+    }
 
-      actionButton(
-        "run",
-        "Oblicz / Calculate"
-      ),
+    .btn-calc {
+      background-color: red !important;
+      color: white !important;
+      border: 2px solid darkred !important;
+      font-weight: bold;
+    }
 
-      hr(),
+    .btn-browse:hover {
+      background-color: forestgreen !important;
+    }
 
-      downloadButton(
-        "download",
-        "Pobierz wynik CSV / Download results CSV"
-      ),
+    .btn-calc:hover {
+      background-color: firebrick !important;
+    }
+  ")),
 
-      hr(),
+  fileInput(
+    "file",
+    "1. Wybierz plik CSV / Browse CSV file",
+    buttonLabel = "Browse",
+    placeholder = "Brak pliku / No file selected"
+  ),
 
-      h4(
-        "Jak interpretować wyniki? / How to interpret the results?"
-      ),
+  tags$script(HTML("
+    $(document).on('shiny:connected', function() {
+      $('.btn-file').addClass('btn-browse');
+    });
+  ")),
+
+  actionButton(
+    "run",
+    "2. Oblicz / Calculate",
+    class = "btn-calc"
+  ),
+
+  hr(),
+
+  h4(
+    "Jak interpretować wyniki? / How to interpret the results?"
+  ),
 
 
       tags$p(
