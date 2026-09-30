@@ -26,25 +26,62 @@ ui <- fluidPage(
 
   sidebarLayout(
 
-    sidebarPanel(
+sidebarPanel(
 
-      fileInput(
-        "file",
-        "Wgraj plik CSV z aplikacji MySkoda"
-      ),
+  fileInput(
+    "file",
+    "Wgraj plik CSV z aplikacji MySkoda"
+  ),
 
-      actionButton(
-        "run",
-        "Oblicz"
-      ),
+  actionButton(
+    "run",
+    "Oblicz"
+  ),
 
-      hr(),
+  hr(),
 
-      downloadButton(
-        "download",
-        "Pobierz wynik CSV"
-      )
-    ),
+  downloadButton(
+    "download",
+    "Pobierz wynik CSV"
+  ),
+
+  hr(),
+
+  h4("Jak interpretować wyniki?"),
+
+tags$p(
+  tags$b("Model dla przejazdów mieszanych"),
+  tags$br(),
+  "Regresja liniowa opisująca zależność pomiędzy zużyciem energii ",
+  "elektrycznej i benzyny podczas przejazdów mieszanych. ",
+  "Wartość R² określa stopień dopasowania modelu do obserwowanych danych. ",
+  "Wyraz wolny równania określa modelowane spalanie przy zużyciu energii ",
+  "równym 0 kWh/100 km i jest wykorzystywany jako wartość referencyjna ",
+  "do oszacowania udziału przebiegu spalinowego."
+),
+
+  tags$p(
+    tags$b("Podsumowanie przebiegu"),
+    tags$br(),
+    "Szacowany podział całkowitego przebiegu na jazdę elektryczną ",
+    "i spalinową."
+  ),
+
+  tags$p(
+    tags$b("Liczba przejazdów"),
+    tags$br(),
+    "Liczba przejazdów elektrycznych, mieszanych i spalinowych."
+  ),
+
+  tags$p(
+    tags$b("Przejazdy w czasie"),
+    tags$br(),
+    "Pokazuje, kiedy występowały przejazdy elektryczne, mieszane ",
+    "i spalinowe. Linie przerywane przedstawiają średnie zużycie ",
+    "energii podczas jazdy elektrycznej oraz średnie spalanie ",
+    "w cyklu mieszanym."
+  )
+),
 
     mainPanel(
 
