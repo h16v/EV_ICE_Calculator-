@@ -7,8 +7,8 @@ library(ggplot2)
 # ==========================================================
 
 COL_EV <- "darkgreen"
-COL_SPALINOWY <- "orange"
-COL_MIESZANY <- "red"
+COL_MIESZANY <- "orange"
+COL_SPALINOWY <- "red"
 
 COL_EV_MEAN <- "forestgreen"
 COL_FUEL_MEAN <- "firebrick4"
@@ -84,7 +84,7 @@ ui <- fluidPage(
 
       hr(),
 
-      h4("Przejazdy elektryczne i mieszane w czasie"),
+      h4("Przejazdy w czasie"),
 
       plotOutput(
         "timeline_plot",
@@ -607,9 +607,9 @@ server <- function(input, output, session) {
 
       type = c(
 
-        "Spalinowy",
+        "Przebieg spalinowy",
 
-        "Elektryczny"
+        "Przebieg elektryczny"
       ),
 
       value = c(
@@ -690,10 +690,10 @@ server <- function(input, output, session) {
 
         values = c(
 
-          "Spalinowy" =
+          "Przebieg spalinowy" =
             COL_SPALINOWY,
 
-          "Elektryczny" =
+          "Przebieg elektryczny" =
             COL_EV
         )
       ) +
@@ -739,15 +739,6 @@ server <- function(input, output, session) {
     )
 
 
-    n_spalinowy <- sum(
-
-      trip$Typ_przejazdu ==
-        "Spalinowy",
-
-      na.rm = TRUE
-    )
-
-
     n_mieszany <- sum(
 
       trip$Typ_przejazdu ==
@@ -757,13 +748,22 @@ server <- function(input, output, session) {
     )
 
 
+    n_spalinowy <- sum(
+
+      trip$Typ_przejazdu ==
+        "Spalinowy",
+
+      na.rm = TRUE
+    )
+
+
     n_total <-
 
       n_ev +
 
-      n_spalinowy +
+      n_mieszany +
 
-      n_mieszany
+      n_spalinowy
 
 
     paste0(
@@ -776,12 +776,12 @@ server <- function(input, output, session) {
       n_ev,
       "\n",
 
-      "Tylko spalinowe: ",
-      n_spalinowy,
+      "Mieszane: ",
+      n_mieszany,
       "\n",
 
-      "Mieszane: ",
-      n_mieszany
+      "Tylko spalinowe: ",
+      n_spalinowy
     )
   })
 
@@ -801,14 +801,14 @@ server <- function(input, output, session) {
 
         c(
           "Elektryczne",
-          "Spalinowe",
-          "Mieszane"
+          "Mieszane",
+          "Spalinowe"
         ),
 
         levels = c(
           "Elektryczne",
-          "Spalinowe",
-          "Mieszane"
+          "Mieszane",
+          "Spalinowe"
         )
       ),
 
@@ -822,13 +822,13 @@ server <- function(input, output, session) {
 
         sum(
           trip$Typ_przejazdu ==
-            "Spalinowy",
+            "Mieszany",
           na.rm = TRUE
         ),
 
         sum(
           trip$Typ_przejazdu ==
-            "Mieszany",
+            "Spalinowy",
           na.rm = TRUE
         )
       )
@@ -872,11 +872,11 @@ server <- function(input, output, session) {
           "Elektryczne" =
             COL_EV,
 
-          "Spalinowe" =
-            COL_SPALINOWY,
-
           "Mieszane" =
-            COL_MIESZANY
+            COL_MIESZANY,
+
+          "Spalinowe" =
+            COL_SPALINOWY
         )
       ) +
 
@@ -939,7 +939,8 @@ server <- function(input, output, session) {
 
         c(
           "Elektryczny",
-          "Mieszany"
+          "Mieszany",
+          "Spalinowy"
         ) &
 
         !is.na(
@@ -955,7 +956,7 @@ server <- function(input, output, session) {
 
         nrow(plot_data) > 0,
 
-        "Brak przejazdów elektrycznych lub mieszanych."
+        "Brak przejazdów do wyświetlenia."
       )
     )
 
@@ -978,8 +979,11 @@ server <- function(input, output, session) {
     max_fuel <- max(
 
       plot_data$Average.fuel.consumption.in.l.100km[
-        plot_data$Typ_przejazdu ==
-          "Mieszany"
+        plot_data$Typ_przejazdu %in%
+          c(
+            "Mieszany",
+            "Spalinowy"
+          )
       ],
 
       na.rm = TRUE
@@ -1001,7 +1005,7 @@ server <- function(input, output, session) {
         is.finite(max_fuel) &&
           max_fuel > 0,
 
-        "Brak poprawnych danych zużycia benzyny dla przejazdów mieszanych."
+        "Brak poprawnych danych zużycia benzyny."
       )
     )
 
@@ -1035,8 +1039,11 @@ server <- function(input, output, session) {
     mean_fuel <- mean(
 
       plot_data$Average.fuel.consumption.in.l.100km[
-        plot_data$Typ_przejazdu ==
-          "Mieszany"
+        plot_data$Typ_przejazdu %in%
+          c(
+            "Mieszany",
+            "Spalinowy"
+          )
       ],
 
       na.rm = TRUE
@@ -1154,7 +1161,41 @@ server <- function(input, output, session) {
           20 * 60 * 60,
 
         alpha =
-          0.82
+          0.85
+      ) +
+
+
+      # ----------------------------------------------------
+      # SPALINOWE
+      # ----------------------------------------------------
+
+      geom_col(
+
+        data = subset(
+
+          plot_data,
+
+          Typ_przejazdu ==
+            "Spalinowy"
+        ),
+
+        aes(
+
+          y =
+
+            Average.fuel.consumption.in.l.100km *
+
+            scale_factor
+        ),
+
+        fill =
+          COL_SPALINOWY,
+
+        width =
+          20 * 60 * 60,
+
+        alpha =
+          0.85
       ) +
 
 
@@ -1209,12 +1250,6 @@ server <- function(input, output, session) {
 
         label.size =
           0.35,
-
-        label.padding =
-          unit(
-            0.2,
-            "lines"
-          ),
 
         hjust =
           0,
@@ -1279,12 +1314,6 @@ server <- function(input, output, session) {
         label.size =
           0.35,
 
-        label.padding =
-          unit(
-            0.2,
-            "lines"
-          ),
-
         hjust =
           0,
 
@@ -1338,11 +1367,11 @@ server <- function(input, output, session) {
 
         title =
 
-          "Przejazdy elektryczne i mieszane w czasie",
+          "Przejazdy według rodzaju napędu w czasie",
 
         subtitle =
 
-          "Zielony = jazda elektryczna | Czerwony = jazda mieszana",
+          "Zielony = elektryczny | Pomarańczowy = mieszany | Czerwony = spalinowy",
 
         x =
 
@@ -1392,7 +1421,7 @@ server <- function(input, output, session) {
           element_text(
 
             color =
-              COL_MIESZANY,
+              COL_SPALINOWY,
 
             face =
               "bold"
@@ -1401,7 +1430,7 @@ server <- function(input, output, session) {
         axis.text.y.right =
           element_text(
             color =
-              COL_MIESZANY
+              COL_SPALINOWY
           )
       )
   })
