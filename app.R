@@ -52,14 +52,14 @@ ui <- fluidPage(
 
       hr(),
 
+      h4("Przejazdy elektryczne i mieszane w czasie"),
+
+      plotOutput(
+        "timeline_plot",
+        height = "500px"
+      ),
+
       hr(),
-
-h4("Przejazdy elektryczne i mieszane w czasie"),
-
-plotOutput(
-  "timeline_plot",
-  height = "500px"
-),
 
       h4("Podgląd danych"),
       tableOutput("table")
@@ -98,6 +98,11 @@ server <- function(input, output, session) {
       need(
         "Mileage.in.km" %in% names(trip),
         "Brak kolumny dotyczącej długości przejazdu."
+      ),
+
+      need(
+        "End.of.trip" %in% names(trip),
+        "Brak kolumny End.of.trip."
       )
     )
 
@@ -111,6 +116,11 @@ server <- function(input, output, session) {
     trip$Average.electric.consumption.in.kWh.100km <-
       as.numeric(trip$Average.electric.consumption.in.kWh.100km)
 
+    # konwersja daty
+    trip$Data_przejazdu <- as.POSIXct(
+      trip$End.of.trip,
+      format = "%d.%m.%Y %H:%M"
+    )
 
     # ------------------------------------------------------
     # Klasyfikacja przejazdów
@@ -159,9 +169,11 @@ server <- function(input, output, session) {
 
     validate(
       need(
-        length(unique(
-          hybrid$Average.electric.consumption.in.kWh.100km
-        )) > 1,
+        length(
+          unique(
+            hybrid$Average.electric.consumption.in.kWh.100km
+          )
+        ) > 1,
         "Brak zróżnicowania zużycia energii potrzebnego do regresji."
       )
     )
@@ -188,7 +200,7 @@ server <- function(input, output, session) {
 
 
   # ========================================================
-  # OBLICZENIE PRZEBIEGU EV / BENZYNA
+  # OBLICZENIE PRZEBIEGU ELEKTRYCZNEGO I SPALINOWEGO
   # ========================================================
 
   data_processed <- reactive({
@@ -220,7 +232,7 @@ server <- function(input, output, session) {
         )
       )
 
-    # szacowane km
+    # szacowane kilometry
     trip$Km_spalinowe <-
       trip$Mileage.in.km * trip$Udzial_spalinowy
 
@@ -610,207 +622,206 @@ server <- function(input, output, session) {
       )
   })
 
-# ========================================================
-# WYKRES PRZEJAZDÓW W CZASIE
-# niebieski = elektryczny
-# czerwony  = mieszany / benzyna
-# ========================================================
 
-output$timeline_plot <- renderPlot({
+  # ========================================================
+  # WYKRES PRZEJAZDÓW W CZASIE
+  #
+  # niebieski = elektryczny
+  # czerwony  = mieszany
+  # ========================================================
 
-  trip <- data_processed()
+  output$timeline_plot <- renderPlot({
 
-  # ------------------------------------------------------
-  # Konwersja daty
-  # ------------------------------------------------------
+    trip <- data_processed()
 
-  trip$Data_przejazdu <- as.POSIXct(
-    trip$End.of.trip,
-    format = "%d.%m.%Y %H:%M"
-  )
+    # sortowanie chronologiczne
+    trip <- trip[
+      order(trip$Data_przejazdu),
+    ]
 
-  # sortowanie chronologiczne
-  trip <- trip[
-    order(trip$Data_przejazdu),
-  ]
+    # tylko przejazdy elektryczne i mieszane
+    plot_data <- trip[
+      trip$Typ_przejazdu %in% c(
+        "Elektryczny",
+        "Mieszany"
+      ) &
+        !is.na(trip$Data_przejazdu),
+    ]
 
-
-  # ------------------------------------------------------
-  # Tylko przejazdy elektryczne i mieszane
-  # ------------------------------------------------------
-
-  plot_data <- trip[
-    trip$Typ_przejazdu %in% c(
-      "Elektryczny",
-      "Mieszany"
-    ),
-  ]
-
-  validate(
-    need(
-      nrow(plot_data) > 0,
-      "Brak przejazdów elektrycznych lub mieszanych."
+    validate(
+      need(
+        nrow(plot_data) > 0,
+        "Brak przejazdów elektrycznych lub mieszanych."
+      )
     )
-  )
 
 
-  # ------------------------------------------------------
-  # Maksymalne wartości potrzebne do drugiej osi
-  # ------------------------------------------------------
+    # ------------------------------------------------------
+    # dane do skalowania osi
+    # ------------------------------------------------------
 
-  max_kwh <- max(
-    plot_data$Average.electric.consumption.in.kWh.100km[
-      plot_data$Typ_przejazdu == "Elektryczny"
-    ],
-    na.rm = TRUE
-  )
+    max_kwh <- max(
+      plot_data$Average.electric.consumption.in.kWh.100km[
+        plot_data$Typ_przejazdu == "Elektryczny"
+      ],
+      na.rm = TRUE
+    )
 
-  max_fuel <- max(
-    plot_data$Average.fuel.consumption.in.l.100km[
-      plot_data$Typ_przejazdu == "Mieszany"
-    ],
-    na.rm = TRUE
-  )
+    max_fuel <- max(
+      plot_data$Average.fuel.consumption.in.l.100km[
+        plot_data$Typ_przejazdu == "Mieszany"
+      ],
+      na.rm = TRUE
+    )
 
-
-  # współczynnik potrzebny do wyświetlenia dwóch skal
-  scale_factor <- max_kwh / max_fuel
-
-
-  # ------------------------------------------------------
-  # Wykres
-  # ------------------------------------------------------
-
-  ggplot(
-    plot_data,
-    aes(x = Data_przejazdu)
-  ) +
-
-    # ====================================================
-    # PRZEJAZDY ELEKTRYCZNE
-    # ====================================================
-
-    geom_col(
-      data = subset(
-        plot_data,
-        Typ_przejazdu == "Elektryczny"
+    validate(
+      need(
+        is.finite(max_kwh) && max_kwh > 0,
+        "Brak poprawnych danych zużycia energii dla przejazdów elektrycznych."
       ),
+      need(
+        is.finite(max_fuel) && max_fuel > 0,
+        "Brak poprawnych danych zużycia benzyny dla przejazdów mieszanych."
+      )
+    )
+
+    # współczynnik potrzebny do wyświetlenia drugiej osi
+    scale_factor <- max_kwh / max_fuel
+
+
+    # ------------------------------------------------------
+    # wykres
+    # ------------------------------------------------------
+
+    ggplot(
+      plot_data,
       aes(
-        y = Average.electric.consumption.in.kWh.100km
-      ),
-      fill = "blue",
-      width = 0.8,
-      alpha = 0.8
+        x = Data_przejazdu
+      )
     ) +
 
+      # ----------------------------------------------------
+      # przejazdy elektryczne
+      # ----------------------------------------------------
 
-    # ====================================================
-    # PRZEJAZDY MIESZANE - BENZYNA
-    # ====================================================
+      geom_col(
+        data = subset(
+          plot_data,
+          Typ_przejazdu == "Elektryczny"
+        ),
+        aes(
+          y = Average.electric.consumption.in.kWh.100km
+        ),
+        fill = "blue",
+        width = 12 * 60 * 60,
+        alpha = 0.8
+      ) +
 
-    geom_col(
-      data = subset(
-        plot_data,
-        Typ_przejazdu == "Mieszany"
-      ),
-      aes(
-        y =
-          Average.fuel.consumption.in.l.100km *
-          scale_factor
-      ),
-      fill = "red",
-      width = 0.8,
-      alpha = 0.8
-    ) +
+      # ----------------------------------------------------
+      # przejazdy mieszane - benzyna
+      # ----------------------------------------------------
 
+      geom_col(
+        data = subset(
+          plot_data,
+          Typ_przejazdu == "Mieszany"
+        ),
+        aes(
+          y =
+            Average.fuel.consumption.in.l.100km *
+            scale_factor
+        ),
+        fill = "red",
+        width = 12 * 60 * 60,
+        alpha = 0.8
+      ) +
 
-    # ====================================================
-    # DWIE OSIE Y
-    # ====================================================
+      # ----------------------------------------------------
+      # dwie osie Y
+      # ----------------------------------------------------
 
-    scale_y_continuous(
-
-      name =
-        "Średnie zużycie energii [kWh/100 km]",
-
-      sec.axis = sec_axis(
-
-        ~ . / scale_factor,
+      scale_y_continuous(
 
         name =
-          "Średnie zużycie benzyny [l/100 km]"
+          "Średnie zużycie energii [kWh/100 km]",
+
+        sec.axis = sec_axis(
+
+          ~ . / scale_factor,
+
+          name =
+            "Średnie zużycie benzyny [l/100 km]"
+        )
+      ) +
+
+      # ----------------------------------------------------
+      # oś czasu
+      # ----------------------------------------------------
+
+      scale_x_datetime(
+
+        date_breaks = "1 month",
+
+        date_labels = "%m.%Y"
+      ) +
+
+      # ----------------------------------------------------
+      # opisy
+      # ----------------------------------------------------
+
+      labs(
+
+        title =
+          "Przejazdy elektryczne i mieszane w czasie",
+
+        subtitle =
+          "Niebieski = jazda elektryczna | Czerwony = jazda mieszana",
+
+        x =
+          "Data przejazdu"
+      ) +
+
+      # ----------------------------------------------------
+      # wygląd
+      # ----------------------------------------------------
+
+      theme_minimal() +
+
+      theme(
+
+        plot.title = element_text(
+          hjust = 0.5
+        ),
+
+        plot.subtitle = element_text(
+          hjust = 0.5
+        ),
+
+        axis.text.x = element_text(
+          angle = 45,
+          hjust = 1
+        ),
+
+        axis.title.y.left = element_text(
+          color = "blue",
+          face = "bold"
+        ),
+
+        axis.text.y.left = element_text(
+          color = "blue"
+        ),
+
+        axis.title.y.right = element_text(
+          color = "red",
+          face = "bold"
+        ),
+
+        axis.text.y.right = element_text(
+          color = "red"
+        )
       )
-    ) +
+  })
 
-
-    # ====================================================
-    # OŚ CZASU
-    # ====================================================
-
-    scale_x_datetime(
-
-      date_breaks = "1 month",
-
-      date_labels = "%m.%Y"
-    ) +
-
-
-    # ====================================================
-    # OPISY
-    # ====================================================
-
-    labs(
-
-      title =
-        "Przejazdy elektryczne i mieszane w czasie",
-
-      subtitle =
-        "Niebieski = jazda elektryczna | Czerwony = jazda mieszana",
-
-      x = "Data przejazdu"
-    ) +
-
-
-    # ====================================================
-    # WYGLĄD
-    # ====================================================
-
-    theme_minimal() +
-
-    theme(
-
-      plot.title = element_text(
-        hjust = 0.5
-      ),
-
-      plot.subtitle = element_text(
-        hjust = 0.5
-      ),
-
-      axis.text.x = element_text(
-        angle = 45,
-        hjust = 1
-      ),
-
-      axis.title.y.left = element_text(
-        color = "blue",
-        face = "bold"
-      ),
-
-      axis.text.y.left = element_text(
-        color = "blue"
-      ),
-
-      axis.title.y.right = element_text(
-        color = "red",
-        face = "bold"
-      ),
-
-      axis.text.y.right = element_text(
-        color = "red"
-      )
-    )
-})
 
   # ========================================================
   # PODGLĄD TABELI
@@ -832,6 +843,7 @@ output$timeline_plot <- renderPlot({
   output$download <- downloadHandler(
 
     filename = function() {
+
       "wynik_EV_spalinowy.csv"
     },
 
