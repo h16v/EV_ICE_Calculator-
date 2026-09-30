@@ -23,7 +23,7 @@ COL_DAILY <- "steelblue"
 ui <- fluidPage(
 
   titlePanel(
-    "Analiza wykorzystania napędu elektrycznego i spalinowego – Škoda Kodiaq iV PHEV / Electric and combustion powertrain analysis – Škoda Kodiaq iV PHEV"
+    "Analiza wykorzystania napędu elektrycznego i spalinowego / Electric vs petrol driving share – Škoda Kodiaq iV PHEV"
   ),
 
   sidebarLayout(
@@ -545,29 +545,15 @@ server <- function(input, output, session) {
     hybrid <- info$hybrid
 
 
-    label_model <- paste0(
-
-      "Spalanie / Fuel = ",
-
-      round(
-        info$slope,
-        3
-      ),
-
-      " × kWh + ",
-
-      round(
-        info$intercept,
-        3
-      ),
-
-      "\nR² = ",
-
-      round(
-        info$r2,
-        3
-      )
-    )
+label_model <- paste0(
+  "Spalanie / Fuel = ",
+  round(info$slope, 3),
+  " × kWh + ",
+  round(info$intercept, 3),
+  "\n",
+  "R² = ",
+  round(info$r2, 3)
+)
 
 
     ggplot(
@@ -605,25 +591,25 @@ server <- function(input, output, session) {
           COL_MIESZANY
       ) +
 
-      annotate(
+annotate(
 
-        "label",
+  "label",
 
-        x = Inf,
+  x = max(hybrid$Average.electric.consumption.in.kWh.100km, na.rm = TRUE) * 0.85,
 
-        y = Inf,
+  y = max(hybrid$Average.fuel.consumption.in.l.100km, na.rm = TRUE) * 0.98,
 
-        label =
-          label_model,
+  label = label_model,
 
-        hjust = 1.1,
+  hjust = 0,
+  vjust = 1,
 
-        vjust = 1.5,
+  size = 5,
 
-        size = 5,
+  fill = "white",
 
-        fill = "white"
-      ) +
+  label.size = 0.35
+) +
 
       labs(
 
