@@ -3,7 +3,7 @@ library(ggplot2)
 
 
 # ==========================================================
-# STAŁE KOLORY
+# KOLORY / COLORS
 # ==========================================================
 
 COL_EV <- "darkgreen"
@@ -11,7 +11,9 @@ COL_MIESZANY <- "orange"
 COL_SPALINOWY <- "red"
 
 COL_EV_MEAN <- "forestgreen"
-COL_FUEL_MEAN <- "firebrick4"
+COL_FUEL_MEAN <- "darkorange4"
+
+COL_DAILY <- "steelblue"
 
 
 # ==========================================================
@@ -21,71 +23,148 @@ COL_FUEL_MEAN <- "firebrick4"
 ui <- fluidPage(
 
   titlePanel(
-    "Analiza wykorzystania napędu elektrycznego i spalinowego – Škoda Kodiaq iV PHEV"
+    "Analiza wykorzystania napędu elektrycznego i spalinowego – Škoda Kodiaq iV PHEV / Electric and combustion powertrain analysis – Škoda Kodiaq iV PHEV"
   ),
 
   sidebarLayout(
 
-sidebarPanel(
+    # ======================================================
+    # PANEL LEWY / LEFT PANEL
+    # ======================================================
 
-  fileInput(
-    "file",
-    "Wgraj plik CSV z aplikacji MySkoda"
-  ),
+    sidebarPanel(
 
-  actionButton(
-    "run",
-    "Oblicz"
-  ),
+      fileInput(
+        "file",
+        "Wgraj plik CSV z aplikacji MySkoda / Upload a CSV file from the MySkoda app"
+      ),
 
-  hr(),
+      actionButton(
+        "run",
+        "Oblicz / Calculate"
+      ),
 
-  downloadButton(
-    "download",
-    "Pobierz wynik CSV"
-  ),
+      hr(),
 
-  hr(),
+      downloadButton(
+        "download",
+        "Pobierz wynik CSV / Download results CSV"
+      ),
 
-  h4("Jak interpretować wyniki?"),
+      hr(),
 
-tags$p(
-  tags$b("Model dla przejazdów mieszanych"),
-  tags$br(),
-  "Regresja liniowa opisująca zależność pomiędzy zużyciem energii ",
-  "elektrycznej i benzyny podczas przejazdów mieszanych. ",
-  "Wartość R² określa stopień dopasowania modelu do obserwowanych danych. ",
-  "Wyraz wolny równania określa modelowane spalanie przy zużyciu energii ",
-  "równym 0 kWh/100 km i jest wykorzystywany jako wartość referencyjna ",
-  "do oszacowania udziału przebiegu spalinowego."
-),
+      h4(
+        "Jak interpretować wyniki? / How to interpret the results?"
+      ),
 
-  tags$p(
-    tags$b("Podsumowanie przebiegu"),
-    tags$br(),
-    "Szacowany podział całkowitego przebiegu na jazdę elektryczną ",
-    "i spalinową."
-  ),
 
-  tags$p(
-    tags$b("Liczba przejazdów"),
-    tags$br(),
-    "Liczba przejazdów elektrycznych, mieszanych i spalinowych."
-  ),
+      tags$p(
 
-  tags$p(
-    tags$b("Przejazdy w czasie"),
-    tags$br(),
-    "Pokazuje, kiedy występowały przejazdy elektryczne, mieszane ",
-    "i spalinowe. Linie przerywane przedstawiają średnie zużycie ",
-    "energii podczas jazdy elektrycznej oraz średnie spalanie ",
-    "w cyklu mieszanym."
-  )
-),
+        tags$b(
+          "Model dla przejazdów mieszanych / Mixed-mode trip model"
+        ),
+
+        tags$br(),
+
+        "Regresja liniowa opisująca zależność pomiędzy zużyciem energii elektrycznej i benzyny podczas przejazdów mieszanych. ",
+        "Wartość R² określa stopień dopasowania modelu do obserwowanych danych. ",
+        "Wyraz wolny równania określa modelowane spalanie przy zużyciu energii równym 0 kWh/100 km i jest wykorzystywany jako wartość referencyjna do oszacowania udziału przebiegu spalinowego.",
+
+        tags$br(),
+        tags$br(),
+
+        tags$em(
+          "The linear regression describes the relationship between electricity and fuel consumption during mixed-mode trips. ",
+          "R² indicates how well the model fits the observed data. ",
+          "The intercept represents the modelled fuel consumption at 0 kWh/100 km and is used as the reference value for estimating the combustion-engine share of the distance."
+        )
+      ),
+
+
+      tags$p(
+
+        tags$b(
+          "Podsumowanie przebiegu / Distance summary"
+        ),
+
+        tags$br(),
+
+        "Szacowany podział całkowitego przebiegu na jazdę elektryczną i spalinową.",
+
+        tags$br(),
+
+        tags$em(
+          "Estimated division of the total distance into electric and combustion-engine driving."
+        )
+      ),
+
+
+      tags$p(
+
+        tags$b(
+          "Liczba przejazdów / Number of trips"
+        ),
+
+        tags$br(),
+
+        "Liczba przejazdów elektrycznych, mieszanych i spalinowych.",
+
+        tags$br(),
+
+        tags$em(
+          "Number of electric, mixed-mode and combustion-only trips."
+        )
+      ),
+
+
+      tags$p(
+
+        tags$b(
+          "Przejazdy w czasie / Trips over time"
+        ),
+
+        tags$br(),
+
+        "Pokazuje, kiedy występowały przejazdy elektryczne, mieszane i spalinowe. ",
+        "Linie przerywane przedstawiają średnie zużycie energii podczas jazdy elektrycznej oraz średnie spalanie w cyklu mieszanym.",
+
+        tags$br(),
+
+        tags$em(
+          "Shows when electric, mixed-mode and combustion-only trips occurred. ",
+          "Dashed lines indicate the average electricity consumption during electric trips and the average fuel consumption during mixed-mode trips."
+        )
+      ),
+
+
+      tags$p(
+
+        tags$b(
+          "Dzienny przebieg / Daily distance"
+        ),
+
+        tags$br(),
+
+        "Łączny przebieg wykonany każdego dnia na podstawie wszystkich przejazdów zapisanych w pliku CSV.",
+
+        tags$br(),
+
+        tags$em(
+          "Total distance travelled each day based on all trips recorded in the CSV file."
+        )
+      )
+    ),
+
+
+    # ======================================================
+    # PANEL GŁÓWNY / MAIN PANEL
+    # ======================================================
 
     mainPanel(
 
-      h4("Model dla przejazdów mieszanych"),
+      h4(
+        "Model dla przejazdów mieszanych / Mixed-mode trip model"
+      ),
 
       verbatimTextOutput(
         "model_summary"
@@ -97,7 +176,10 @@ tags$p(
 
       hr(),
 
-      h4("Podsumowanie przebiegu"),
+
+      h4(
+        "Podsumowanie przebiegu / Distance summary"
+      ),
 
       verbatimTextOutput(
         "summary"
@@ -109,7 +191,10 @@ tags$p(
 
       hr(),
 
-      h4("Liczba przejazdów według rodzaju napędu"),
+
+      h4(
+        "Liczba przejazdów według rodzaju napędu / Number of trips by powertrain mode"
+      ),
 
       verbatimTextOutput(
         "trip_counts"
@@ -121,7 +206,10 @@ tags$p(
 
       hr(),
 
-      h4("Przejazdy w czasie"),
+
+      h4(
+        "Przejazdy w czasie / Trips over time"
+      ),
 
       plotOutput(
         "timeline_plot",
@@ -130,7 +218,22 @@ tags$p(
 
       hr(),
 
-      h4("Podgląd danych"),
+
+      h4(
+        "Dzienny przebieg / Daily distance"
+      ),
+
+      plotOutput(
+        "daily_distance_plot",
+        height = "450px"
+      ),
+
+      hr(),
+
+
+      h4(
+        "Podgląd danych / Data preview"
+      ),
 
       tableOutput(
         "table"
@@ -149,11 +252,13 @@ server <- function(input, output, session) {
 
   # ========================================================
   # WCZYTANIE I PRZYGOTOWANIE DANYCH
+  # DATA IMPORT AND PREPARATION
   # ========================================================
 
   data_raw <- eventReactive(input$run, {
 
     req(input$file)
+
 
     trip <- read.csv(
       input$file$datapath,
@@ -165,28 +270,28 @@ server <- function(input, output, session) {
 
       need(
         "Average.fuel.consumption.in.l.100km" %in% names(trip),
-        "Brak kolumny dotyczącej zużycia benzyny."
+        "Brak kolumny zużycia benzyny. / Fuel consumption column is missing."
       ),
 
       need(
         "Average.electric.consumption.in.kWh.100km" %in% names(trip),
-        "Brak kolumny dotyczącej zużycia energii elektrycznej."
+        "Brak kolumny zużycia energii elektrycznej. / Electricity consumption column is missing."
       ),
 
       need(
         "Mileage.in.km" %in% names(trip),
-        "Brak kolumny dotyczącej długości przejazdu."
+        "Brak kolumny długości przejazdu. / Trip distance column is missing."
       ),
 
       need(
         "End.of.trip" %in% names(trip),
-        "Brak kolumny End.of.trip."
+        "Brak kolumny End.of.trip. / End.of.trip column is missing."
       )
     )
 
 
     # ------------------------------------------------------
-    # Konwersja wartości
+    # KONWERSJA WARTOŚCI / VALUE CONVERSION
     # ------------------------------------------------------
 
     trip$Mileage.in.km <-
@@ -194,10 +299,12 @@ server <- function(input, output, session) {
         trip$Mileage.in.km
       )
 
+
     trip$Average.fuel.consumption.in.l.100km <-
       as.numeric(
         trip$Average.fuel.consumption.in.l.100km
       )
+
 
     trip$Average.electric.consumption.in.kWh.100km <-
       as.numeric(
@@ -206,7 +313,7 @@ server <- function(input, output, session) {
 
 
     # ------------------------------------------------------
-    # Data przejazdu
+    # DATA / DATE
     # ------------------------------------------------------
 
     trip$Data_przejazdu <- as.POSIXct(
@@ -215,8 +322,13 @@ server <- function(input, output, session) {
     )
 
 
+    trip$Dzien <- as.Date(
+      trip$Data_przejazdu
+    )
+
+
     # ------------------------------------------------------
-    # Klasyfikacja przejazdów
+    # KLASYFIKACJA PRZEJAZDÓW / TRIP CLASSIFICATION
     # ------------------------------------------------------
 
     trip$Typ_przejazdu <- ifelse(
@@ -242,6 +354,7 @@ server <- function(input, output, session) {
 
   # ========================================================
   # MODEL REGRESJI DLA PRZEJAZDÓW MIESZANYCH
+  # REGRESSION MODEL FOR MIXED-MODE TRIPS
   # ========================================================
 
   model_info <- reactive({
@@ -268,7 +381,7 @@ server <- function(input, output, session) {
 
       need(
         nrow(hybrid) >= 3,
-        "Za mało przejazdów mieszanych do utworzenia modelu."
+        "Za mało przejazdów mieszanych do utworzenia modelu. / Too few mixed-mode trips to fit the model."
       )
     )
 
@@ -283,7 +396,7 @@ server <- function(input, output, session) {
           )
         ) > 1,
 
-        "Brak zróżnicowania zużycia energii potrzebnego do regresji."
+        "Brak zróżnicowania zużycia energii potrzebnego do regresji. / Insufficient variation in electricity consumption for regression."
       )
     )
 
@@ -322,6 +435,7 @@ server <- function(input, output, session) {
 
   # ========================================================
   # OBLICZENIE PRZEBIEGU ELEKTRYCZNEGO I SPALINOWEGO
+  # ESTIMATION OF ELECTRIC AND COMBUSTION DISTANCE
   # ========================================================
 
   data_processed <- reactive({
@@ -338,7 +452,7 @@ server <- function(input, output, session) {
 
       need(
         fuel_ref > 0,
-        "Model zwrócił nieprawidłowe spalanie referencyjne."
+        "Model zwrócił nieprawidłowe spalanie referencyjne. / The model returned an invalid reference fuel consumption."
       )
     )
 
@@ -382,7 +496,7 @@ server <- function(input, output, session) {
 
 
   # ========================================================
-  # PODSUMOWANIE MODELU
+  # PODSUMOWANIE MODELU / MODEL SUMMARY
   # ========================================================
 
   output$model_summary <- renderText({
@@ -392,23 +506,28 @@ server <- function(input, output, session) {
 
     paste0(
 
-      "Liczba przejazdów mieszanych użytych do modelu: ",
+      "Liczba przejazdów mieszanych użytych do modelu / ",
+      "Number of mixed-mode trips used in the model: ",
       nrow(info$hybrid),
+
       "\n\n",
 
-      "Równanie modelu:\n",
+      "Równanie modelu / Model equation:\n",
 
-      "Spalanie = ",
+      "Spalanie / Fuel consumption = ",
       round(info$slope, 3),
-      " × zużycie energii + ",
+      " × zużycie energii / electricity consumption + ",
       round(info$intercept, 3),
+
       "\n\n",
 
       "R² = ",
       round(info$r2, 3),
+
       "\n\n",
 
-      "Modelowane spalanie przy 0 kWh/100 km: ",
+      "Modelowane spalanie przy 0 kWh/100 km / ",
+      "Modelled fuel consumption at 0 kWh/100 km: ",
       round(info$intercept, 2),
       " l/100 km"
     )
@@ -416,7 +535,7 @@ server <- function(input, output, session) {
 
 
   # ========================================================
-  # WYKRES REGRESJI
+  # WYKRES REGRESJI / REGRESSION PLOT
   # ========================================================
 
   output$hybrid_plot <- renderPlot({
@@ -428,13 +547,26 @@ server <- function(input, output, session) {
 
     label_model <- paste0(
 
-      "Spalanie = ",
-      round(info$slope, 3),
+      "Spalanie / Fuel = ",
+
+      round(
+        info$slope,
+        3
+      ),
+
       " × kWh + ",
-      round(info$intercept, 3),
+
+      round(
+        info$intercept,
+        3
+      ),
 
       "\nR² = ",
-      round(info$r2, 3)
+
+      round(
+        info$r2,
+        3
+      )
     )
 
 
@@ -455,7 +587,8 @@ server <- function(input, output, session) {
 
       geom_point(
 
-        color = COL_MIESZANY,
+        color =
+          COL_MIESZANY,
 
         size = 3,
 
@@ -468,7 +601,8 @@ server <- function(input, output, session) {
 
         se = TRUE,
 
-        color = COL_MIESZANY
+        color =
+          COL_MIESZANY
       ) +
 
       annotate(
@@ -479,7 +613,8 @@ server <- function(input, output, session) {
 
         y = Inf,
 
-        label = label_model,
+        label =
+          label_model,
 
         hjust = 1.1,
 
@@ -493,12 +628,12 @@ server <- function(input, output, session) {
       labs(
 
         title =
-          "Przejazdy mieszane: zużycie energii a zużycie benzyny",
+          "Przejazdy mieszane: zużycie energii a zużycie benzyny / Mixed-mode trips: electricity vs fuel consumption",
 
         subtitle =
           paste0(
 
-            "Modelowane spalanie przy 0 kWh/100 km = ",
+            "Modelowane spalanie przy 0 kWh/100 km / Modelled fuel consumption at 0 kWh/100 km = ",
 
             round(
               info$intercept,
@@ -509,10 +644,10 @@ server <- function(input, output, session) {
           ),
 
         x =
-          "Zużycie energii [kWh/100 km]",
+          "Zużycie energii / Electricity consumption [kWh/100 km]",
 
         y =
-          "Zużycie benzyny [l/100 km]"
+          "Zużycie benzyny / Fuel consumption [l/100 km]"
       ) +
 
       theme_minimal() +
@@ -533,7 +668,7 @@ server <- function(input, output, session) {
 
 
   # ========================================================
-  # PODSUMOWANIE PRZEBIEGU
+  # PODSUMOWANIE PRZEBIEGU / DISTANCE SUMMARY
   # ========================================================
 
   output$summary <- renderText({
@@ -542,81 +677,60 @@ server <- function(input, output, session) {
 
 
     total_km <- sum(
-
       trip$Mileage.in.km,
-
       na.rm = TRUE
     )
 
 
     total_spalinowe <- sum(
-
       trip$Km_spalinowe,
-
       na.rm = TRUE
     )
 
 
     total_elektryczne <- sum(
-
       trip$Km_elektryczne,
-
       na.rm = TRUE
     )
 
 
     paste0(
 
-      "Całkowity przebieg: ",
+      "Całkowity przebieg / Total distance: ",
+      round(total_km, 1),
+      " km",
 
-      round(
-        total_km,
-        1
-      ),
+      "\n\n",
 
-      " km\n\n",
-
-      "Szacowany przebieg spalinowy: ",
-
-      round(
-        total_spalinowe,
-        1
-      ),
-
+      "Szacowany przebieg spalinowy / Estimated combustion distance: ",
+      round(total_spalinowe, 1),
       " km (",
-
       round(
         total_spalinowe /
           total_km *
           100,
         1
       ),
+      "%)",
 
-      "%)\n",
+      "\n",
 
-      "Szacowany przebieg elektryczny: ",
-
-      round(
-        total_elektryczne,
-        1
-      ),
-
+      "Szacowany przebieg elektryczny / Estimated electric distance: ",
+      round(total_elektryczne, 1),
       " km (",
-
       round(
         total_elektryczne /
           total_km *
           100,
         1
       ),
-
       "%)"
     )
   })
 
 
   # ========================================================
-  # WYKRES KOŁOWY
+  # WYKRES KOŁOWY / DONUT CHART
   # ========================================================
 
   output$donut <- renderPlot({
@@ -625,17 +739,13 @@ server <- function(input, output, session) {
 
 
     total_spalinowe <- sum(
-
       trip$Km_spalinowe,
-
       na.rm = TRUE
     )
 
 
     total_elektryczne <- sum(
-
       trip$Km_elektryczne,
-
       na.rm = TRUE
     )
 
@@ -644,9 +754,9 @@ server <- function(input, output, session) {
 
       type = c(
 
-        "Przebieg spalinowy",
+        "Przebieg spalinowy / Combustion distance",
 
-        "Przebieg elektryczny"
+        "Przebieg elektryczny / Electric distance"
       ),
 
       value = c(
@@ -690,7 +800,6 @@ server <- function(input, output, session) {
       ) +
 
       coord_polar(
-
         theta = "y"
       ) +
 
@@ -705,12 +814,10 @@ server <- function(input, output, session) {
 
           label =
             paste0(
-
               round(
                 percent,
                 1
               ),
-
               "%"
             )
         ),
@@ -727,10 +834,10 @@ server <- function(input, output, session) {
 
         values = c(
 
-          "Przebieg spalinowy" =
+          "Przebieg spalinowy / Combustion distance" =
             COL_SPALINOWY,
 
-          "Przebieg elektryczny" =
+          "Przebieg elektryczny / Electric distance" =
             COL_EV
         )
       ) +
@@ -738,7 +845,7 @@ server <- function(input, output, session) {
       labs(
 
         title =
-          "Szacowany udział przebiegu",
+          "Szacowany udział przebiegu / Estimated distance share",
 
         fill = NULL
       ) +
@@ -759,7 +866,7 @@ server <- function(input, output, session) {
 
 
   # ========================================================
-  # LICZBA PRZEJAZDÓW
+  # LICZBA PRZEJAZDÓW / NUMBER OF TRIPS
   # ========================================================
 
   output$trip_counts <- renderText({
@@ -768,28 +875,19 @@ server <- function(input, output, session) {
 
 
     n_ev <- sum(
-
-      trip$Typ_przejazdu ==
-        "Elektryczny",
-
+      trip$Typ_przejazdu == "Elektryczny",
       na.rm = TRUE
     )
 
 
     n_mieszany <- sum(
-
-      trip$Typ_przejazdu ==
-        "Mieszany",
-
+      trip$Typ_przejazdu == "Mieszany",
       na.rm = TRUE
     )
 
 
     n_spalinowy <- sum(
-
-      trip$Typ_przejazdu ==
-        "Spalinowy",
-
+      trip$Typ_przejazdu == "Spalinowy",
       na.rm = TRUE
     )
 
@@ -805,19 +903,22 @@ server <- function(input, output, session) {
 
     paste0(
 
-      "Wszystkie przejazdy: ",
+      "Wszystkie przejazdy / All trips: ",
       n_total,
+
       "\n\n",
 
-      "Tylko elektryczne: ",
+      "Tylko elektryczne / Electric only: ",
       n_ev,
+
       "\n",
 
-      "Mieszane: ",
+      "Mieszane / Mixed-mode: ",
       n_mieszany,
+
       "\n",
 
-      "Tylko spalinowe: ",
+      "Tylko spalinowe / Combustion only: ",
       n_spalinowy
     )
   })
@@ -825,6 +926,7 @@ server <- function(input, output, session) {
 
   # ========================================================
   # WYKRES LICZBY PRZEJAZDÓW
+  # NUMBER OF TRIPS CHART
   # ========================================================
 
   output$trip_bar <- renderPlot({
@@ -837,15 +939,15 @@ server <- function(input, output, session) {
       Typ = factor(
 
         c(
-          "Elektryczne",
-          "Mieszane",
-          "Spalinowe"
+          "Elektryczne\nElectric",
+          "Mieszane\nMixed-mode",
+          "Spalinowe\nCombustion"
         ),
 
         levels = c(
-          "Elektryczne",
-          "Mieszane",
-          "Spalinowe"
+          "Elektryczne\nElectric",
+          "Mieszane\nMixed-mode",
+          "Spalinowe\nCombustion"
         )
       ),
 
@@ -906,13 +1008,13 @@ server <- function(input, output, session) {
 
         values = c(
 
-          "Elektryczne" =
+          "Elektryczne\nElectric" =
             COL_EV,
 
-          "Mieszane" =
+          "Mieszane\nMixed-mode" =
             COL_MIESZANY,
 
-          "Spalinowe" =
+          "Spalinowe\nCombustion" =
             COL_SPALINOWY
         )
       ) +
@@ -920,12 +1022,12 @@ server <- function(input, output, session) {
       labs(
 
         title =
-          "Liczba przejazdów według rodzaju napędu",
+          "Liczba przejazdów według rodzaju napędu / Number of trips by powertrain mode",
 
         x = NULL,
 
         y =
-          "Liczba przejazdów"
+          "Liczba przejazdów / Number of trips"
       ) +
 
       theme_minimal() +
@@ -954,6 +1056,7 @@ server <- function(input, output, session) {
 
   # ========================================================
   # WYKRES PRZEJAZDÓW W CZASIE
+  # TRIPS OVER TIME
   # ========================================================
 
   output$timeline_plot <- renderPlot({
@@ -962,11 +1065,9 @@ server <- function(input, output, session) {
 
 
     trip <- trip[
-
       order(
         trip$Data_przejazdu
       ),
-
     ]
 
 
@@ -990,16 +1091,14 @@ server <- function(input, output, session) {
     validate(
 
       need(
-
         nrow(plot_data) > 0,
-
-        "Brak przejazdów do wyświetlenia."
+        "Brak przejazdów do wyświetlenia. / No trips available for plotting."
       )
     )
 
 
     # ------------------------------------------------------
-    # Maksymalne wartości
+    # MAKSYMALNE WARTOŚCI / MAXIMUM VALUES
     # ------------------------------------------------------
 
     max_kwh <- max(
@@ -1034,7 +1133,7 @@ server <- function(input, output, session) {
         is.finite(max_kwh) &&
           max_kwh > 0,
 
-        "Brak poprawnych danych zużycia energii dla przejazdów elektrycznych."
+        "Brak poprawnych danych zużycia energii. / No valid electricity consumption data."
       ),
 
       need(
@@ -1042,13 +1141,13 @@ server <- function(input, output, session) {
         is.finite(max_fuel) &&
           max_fuel > 0,
 
-        "Brak poprawnych danych zużycia benzyny."
+        "Brak poprawnych danych zużycia benzyny. / No valid fuel consumption data."
       )
     )
 
 
     # ------------------------------------------------------
-    # Skalowanie prawej osi
+    # SKALOWANIE PRAWEJ OSI / RIGHT AXIS SCALING
     # ------------------------------------------------------
 
     scale_factor <-
@@ -1059,7 +1158,7 @@ server <- function(input, output, session) {
 
 
     # ------------------------------------------------------
-    # Średnie
+    # ŚREDNIE / AVERAGES
     # ------------------------------------------------------
 
     mean_kwh <- mean(
@@ -1073,15 +1172,15 @@ server <- function(input, output, session) {
     )
 
 
-mean_fuel <- mean(
+    mean_fuel <- mean(
 
-  plot_data$Average.fuel.consumption.in.l.100km[
-    plot_data$Typ_przejazdu ==
-      "Mieszany"
-  ],
+      plot_data$Average.fuel.consumption.in.l.100km[
+        plot_data$Typ_przejazdu ==
+          "Mieszany"
+      ],
 
-  na.rm = TRUE
-)
+      na.rm = TRUE
+    )
 
 
     mean_fuel_scaled <-
@@ -1092,21 +1191,17 @@ mean_fuel <- mean(
 
 
     # ------------------------------------------------------
-    # Położenie etykiet
+    # POŁOŻENIE ETYKIET / LABEL POSITION
     # ------------------------------------------------------
 
     x_min <- min(
-
       plot_data$Data_przejazdu,
-
       na.rm = TRUE
     )
 
 
     x_max <- max(
-
       plot_data$Data_przejazdu,
-
       na.rm = TRUE
     )
 
@@ -1121,7 +1216,7 @@ mean_fuel <- mean(
 
 
     # ======================================================
-    # WYKRES
+    # WYKRES / PLOT
     # ======================================================
 
     ggplot(
@@ -1135,7 +1230,7 @@ mean_fuel <- mean(
     ) +
 
       # ----------------------------------------------------
-      # ELEKTRYCZNE
+      # ELEKTRYCZNE / ELECTRIC
       # ----------------------------------------------------
 
       geom_col(
@@ -1166,7 +1261,7 @@ mean_fuel <- mean(
 
 
       # ----------------------------------------------------
-      # MIESZANE
+      # MIESZANE / MIXED-MODE
       # ----------------------------------------------------
 
       geom_col(
@@ -1200,7 +1295,7 @@ mean_fuel <- mean(
 
 
       # ----------------------------------------------------
-      # SPALINOWE
+      # SPALINOWE / COMBUSTION
       # ----------------------------------------------------
 
       geom_col(
@@ -1235,6 +1330,7 @@ mean_fuel <- mean(
 
       # ----------------------------------------------------
       # ŚREDNIE ZUŻYCIE ENERGII
+      # AVERAGE ELECTRICITY CONSUMPTION
       # ----------------------------------------------------
 
       geom_hline(
@@ -1266,7 +1362,7 @@ mean_fuel <- mean(
         label =
           paste0(
 
-            "Średnie zużycie energii: ",
+            "Średnie zużycie energii / Average electricity consumption: ",
 
             round(
               mean_kwh,
@@ -1292,82 +1388,82 @@ mean_fuel <- mean(
           -0.6,
 
         size =
-          4.3
+          4.0
       ) +
 
 
       # ----------------------------------------------------
-      # ŚREDNIE SPALANIE
+      # ŚREDNIE SPALANIE W CYKLU MIESZANYM
+      # AVERAGE FUEL CONSUMPTION IN MIXED MODE
       # ----------------------------------------------------
 
-geom_hline(
+      geom_hline(
 
-  yintercept =
-    mean_fuel_scaled,
+        yintercept =
+          mean_fuel_scaled,
 
-  color =
-    "darkorange3",
+        color =
+          COL_FUEL_MEAN,
 
-  linetype =
-    "dashed",
+        linetype =
+          "dashed",
 
-  linewidth =
-    1.15
-) +
+        linewidth =
+          1.15
+      ) +
 
 
-annotate(
+      annotate(
 
-  "label",
+        "label",
 
-  x =
-    x_label,
+        x =
+          x_label,
 
-  y =
-    mean_fuel_scaled,
+        y =
+          mean_fuel_scaled,
 
-  label =
-    paste0(
+        label =
+          paste0(
 
-      "Średnie spalanie w cyklu mieszanym: ",
+            "Średnie spalanie w cyklu mieszanym / Average mixed-mode fuel consumption: ",
 
-      round(
-        mean_fuel,
-        1
-      ),
+            round(
+              mean_fuel,
+              1
+            ),
 
-      " l/100 km"
-    ),
+            " l/100 km"
+          ),
 
-  color =
-    "darkorange4",
+        color =
+          COL_FUEL_MEAN,
 
-  fill =
-    "white",
+        fill =
+          "white",
 
-  label.size =
-    0.35,
+        label.size =
+          0.35,
 
-  hjust =
-    0,
+        hjust =
+          0,
 
-  vjust =
-    1.4,
+        vjust =
+          1.4,
 
-  size =
-    4.3
-) +
+        size =
+          4.0
+      ) +
 
 
       # ----------------------------------------------------
-      # DWIE OSIE Y
+      # DWIE OSIE Y / TWO Y-AXES
       # ----------------------------------------------------
 
       scale_y_continuous(
 
         name =
-
-          "Średnie zużycie energii [kWh/100 km]",
+          "Średnie zużycie energii / Average electricity consumption [kWh/100 km]",
 
         sec.axis =
 
@@ -1377,14 +1473,13 @@ annotate(
               scale_factor,
 
             name =
-
-              "Średnie zużycie benzyny w cyklu mieszanym [l/100 km]"
+              "Zużycie benzyny / Fuel consumption [l/100 km]"
           )
       ) +
 
 
       # ----------------------------------------------------
-      # OŚ CZASU
+      # OŚ CZASU / TIME AXIS
       # ----------------------------------------------------
 
       scale_x_datetime(
@@ -1400,16 +1495,13 @@ annotate(
       labs(
 
         title =
-
-          "Przejazdy według rodzaju napędu w czasie",
+          "Przejazdy według rodzaju napędu w czasie / Trips by powertrain mode over time",
 
         subtitle =
-
-          "Zielony = elektryczny | Pomarańczowy = mieszany | Czerwony = spalinowy",
+          "Zielony = elektryczny / Green = electric | Pomarańczowy = mieszany / Orange = mixed-mode | Czerwony = spalinowy / Red = combustion",
 
         x =
-
-          "Data przejazdu"
+          "Data przejazdu / Trip date"
       ) +
 
 
@@ -1424,7 +1516,8 @@ annotate(
 
         plot.subtitle =
           element_text(
-            hjust = 0.5
+            hjust = 0.5,
+            size = 10
           ),
 
         axis.text.x =
@@ -1454,8 +1547,8 @@ annotate(
         axis.title.y.right =
           element_text(
 
-          color =
-      "darkorange4",
+            color =
+              COL_FUEL_MEAN,
 
             face =
               "bold"
@@ -1463,37 +1556,307 @@ annotate(
 
         axis.text.y.right =
           element_text(
+
             color =
-              COL_SPALINOWY
+              COL_FUEL_MEAN
           )
       )
   })
 
 
   # ========================================================
-  # PODGLĄD TABELI
+  # DZIENNY PRZEBIEG
+  # DAILY DISTANCE
+  # ========================================================
+
+  output$daily_distance_plot <- renderPlot({
+
+    trip <- data_processed()
+
+
+    daily_source <- trip[
+      !is.na(trip$Dzien) &
+        !is.na(trip$Mileage.in.km),
+    ]
+
+
+    validate(
+
+      need(
+        nrow(daily_source) > 0,
+        "Brak danych do obliczenia dziennego przebiegu. / No data available to calculate daily distance."
+      )
+    )
+
+
+    # ------------------------------------------------------
+    # SUMA KILOMETRÓW DLA KAŻDEGO DNIA
+    # TOTAL DISTANCE FOR EACH DAY
+    # ------------------------------------------------------
+
+    daily <- aggregate(
+
+      Mileage.in.km ~ Dzien,
+
+      data = daily_source,
+
+      FUN = sum,
+
+      na.rm = TRUE
+    )
+
+
+    names(daily)[2] <-
+      "Dzienny_przebieg_km"
+
+
+    # ------------------------------------------------------
+    # PEŁNY ZAKRES DNI
+    # również dni z przebiegiem 0 km
+    #
+    # COMPLETE DATE RANGE
+    # including days with 0 km
+    # ------------------------------------------------------
+
+    wszystkie_dni <- data.frame(
+
+      Dzien = seq(
+
+        min(
+          daily$Dzien,
+          na.rm = TRUE
+        ),
+
+        max(
+          daily$Dzien,
+          na.rm = TRUE
+        ),
+
+        by = "day"
+      )
+    )
+
+
+    daily <- merge(
+
+      wszystkie_dni,
+
+      daily,
+
+      by = "Dzien",
+
+      all.x = TRUE
+    )
+
+
+    daily$Dzienny_przebieg_km[
+      is.na(
+        daily$Dzienny_przebieg_km
+      )
+    ] <- 0
+
+
+    # ------------------------------------------------------
+    # ŚREDNI DZIENNY PRZEBIEG
+    # AVERAGE DAILY DISTANCE
+    # ------------------------------------------------------
+
+    mean_daily <- mean(
+      daily$Dzienny_przebieg_km,
+      na.rm = TRUE
+    )
+
+
+    # ======================================================
+    # WYKRES / PLOT
+    # ======================================================
+
+    ggplot(
+
+      daily,
+
+      aes(
+
+        x = Dzien,
+
+        y = Dzienny_przebieg_km
+      )
+
+    ) +
+
+      geom_col(
+
+        fill =
+          COL_DAILY,
+
+        width =
+          0.8,
+
+        alpha =
+          0.85
+      ) +
+
+      geom_hline(
+
+        yintercept =
+          mean_daily,
+
+        linetype =
+          "dashed",
+
+        color =
+          "steelblue4",
+
+        linewidth =
+          1.1
+      ) +
+
+      annotate(
+
+        "label",
+
+        x =
+          min(
+            daily$Dzien,
+            na.rm = TRUE
+          ) +
+
+          as.integer(
+
+            (
+              max(
+                daily$Dzien,
+                na.rm = TRUE
+              ) -
+
+              min(
+                daily$Dzien,
+                na.rm = TRUE
+              )
+            ) *
+
+              0.02
+          ),
+
+        y =
+          mean_daily,
+
+        label =
+          paste0(
+
+            "Średni dzienny przebieg / Average daily distance: ",
+
+            round(
+              mean_daily,
+              1
+            ),
+
+            " km"
+          ),
+
+        color =
+          "steelblue4",
+
+        fill =
+          "white",
+
+        label.size =
+          0.35,
+
+        hjust =
+          0,
+
+        vjust =
+          -0.6,
+
+        size =
+          4.2
+      ) +
+
+      scale_x_date(
+
+        date_breaks =
+          "1 month",
+
+        date_labels =
+          "%m.%Y",
+
+        expand =
+          expansion(
+            mult = c(
+              0.01,
+              0.01
+            )
+          )
+      ) +
+
+      labs(
+
+        title =
+          "Dzienny przebieg / Daily distance",
+
+        subtitle =
+          "Łączna liczba kilometrów przejechanych każdego dnia / Total distance travelled each day",
+
+        x =
+          "Data / Date",
+
+        y =
+          "Dzienny przebieg / Daily distance [km]"
+      ) +
+
+      theme_minimal() +
+
+      theme(
+
+        plot.title =
+          element_text(
+            hjust = 0.5
+          ),
+
+        plot.subtitle =
+          element_text(
+            hjust = 0.5
+          ),
+
+        axis.text.x =
+          element_text(
+
+            angle = 45,
+
+            hjust = 1
+          ),
+
+        axis.title.y =
+          element_text(
+            face = "bold"
+          )
+      )
+  })
+
+
+  # ========================================================
+  # PODGLĄD TABELI / DATA PREVIEW
   # ========================================================
 
   output$table <- renderTable({
 
     head(
-
       data_processed(),
-
       20
     )
   })
 
 
   # ========================================================
-  # ZAPIS CSV
+  # ZAPIS CSV / CSV EXPORT
   # ========================================================
 
   output$download <- downloadHandler(
 
     filename = function() {
 
-      "wynik_EV_spalinowy.csv"
+      "wynik_EV_spalinowy_EV_combustion_results.csv"
     },
 
     content = function(file) {
@@ -1510,6 +1873,10 @@ annotate(
   )
 }
 
+
+# ==========================================================
+# START APLIKACJI / START APPLICATION
+# ==========================================================
 
 shinyApp(
   ui = ui,
