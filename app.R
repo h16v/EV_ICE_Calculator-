@@ -592,12 +592,17 @@ label_model <- paste0(
       ) +
 
 annotate(
-
   "label",
 
-  x = max(hybrid$Average.electric.consumption.in.kWh.100km, na.rm = TRUE) * 0.85,
+  x = min(
+    hybrid$Average.electric.consumption.in.kWh.100km,
+    na.rm = TRUE
+  ) + 0.5,
 
-  y = max(hybrid$Average.fuel.consumption.in.l.100km, na.rm = TRUE) * 0.98,
+  y = max(
+    hybrid$Average.fuel.consumption.in.l.100km,
+    na.rm = TRUE
+  ) * 0.98,
 
   label = label_model,
 
@@ -609,7 +614,7 @@ annotate(
   fill = "white",
 
   label.size = 0.35
-) +
+)+
 
       labs(
 
