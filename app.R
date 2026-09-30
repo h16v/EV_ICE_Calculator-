@@ -932,13 +932,13 @@ annotate(
         c(
           "Elektryczne\nElectric",
           "Mieszane\nMixed-mode",
-          "Spalinowe\nCombustion"
+          "Spalinowe\nPetrol"
         ),
 
         levels = c(
           "Elektryczne\nElectric",
           "Mieszane\nMixed-mode",
-          "Spalinowe\nCombustion"
+          "Spalinowe\nPetrol"
         )
       ),
 
@@ -1005,7 +1005,7 @@ annotate(
           "Mieszane\nMixed-mode" =
             COL_MIESZANY,
 
-          "Spalinowe\nCombustion" =
+          "Spalinowe\nPetrol" =
             COL_SPALINOWY
         )
       ) +
