@@ -21,7 +21,7 @@ COL_FUEL_MEAN <- "firebrick4"
 ui <- fluidPage(
 
   titlePanel(
-    "Analiza jazdy EV / benzyna - Skoda Kodiaq iV PHEV"
+    "Analiza wykorzystania napędu elektrycznego i spalinowego – Škoda Kodiaq iV PHEV"
   ),
 
   sidebarLayout(
