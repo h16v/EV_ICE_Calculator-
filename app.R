@@ -52,6 +52,10 @@ ui <- fluidPage(
 
       hr(),
 
+      h4("Przebieg jazdy w czasie"),
+      plotOutput("timeline_plot", height = "500px"),
+      hr(),
+
       h4("Podgląd danych"),
       tableOutput("table")
     )
@@ -601,6 +605,154 @@ server <- function(input, output, session) {
       )
   })
 
+  # ========================================================
+# WYKRES PRZEJAZDÓW W CZASIE
+# ========================================================
+
+output$timeline_plot <- renderPlot({
+
+  trip <- data_processed()
+
+  # konwersja daty
+  trip$Data_przejazdu <- as.POSIXct(
+    trip$End.of.trip,
+    format = "%d.%m.%Y %H:%M"
+  )
+
+  # sortowanie chronologiczne
+  trip <- trip[
+    order(trip$Data_przejazdu),
+  ]
+
+  # tylko przejazdy elektryczne i mieszane
+  plot_data <- trip[
+    trip$Typ_przejazdu %in% c("Elektryczny", "Mieszany"),
+  ]
+
+  validate(
+    need(
+      nrow(plot_data) > 0,
+      "Brak przejazdów elektrycznych lub mieszanych."
+    )
+  )
+
+  # dane do skalowania drugiej osi
+  max_kwh <- max(
+    plot_data$Average.electric.consumption.in.kWh.100km[
+      plot_data$Typ_przejazdu == "Elektryczny"
+    ],
+    na.rm = TRUE
+  )
+
+  max_fuel <- max(
+    plot_data$Average.fuel.consumption.in.l.100km[
+      plot_data$Typ_przejazdu == "Mieszany"
+    ],
+    na.rm = TRUE
+  )
+
+  scale_factor <- max_kwh / max_fuel
+
+  ggplot(
+    plot_data,
+    aes(x = Data_przejazdu)
+  ) +
+
+    # ----------------------------------------------------
+    # jazda elektryczna - lewa oś Y
+    # ----------------------------------------------------
+
+    geom_col(
+      data = subset(
+        plot_data,
+        Typ_przejazdu == "Elektryczny"
+      ),
+      aes(
+        y = Average.electric.consumption.in.kWh.100km
+      ),
+      fill = "darkgreen",
+      alpha = 0.75,
+      width = 0.7
+    ) +
+
+    # ----------------------------------------------------
+    # jazda mieszana - prawa oś Y
+    # ----------------------------------------------------
+
+    geom_point(
+      data = subset(
+        plot_data,
+        Typ_przejazdu == "Mieszany"
+      ),
+      aes(
+        y =
+          Average.fuel.consumption.in.l.100km *
+          scale_factor
+      ),
+      color = "steelblue",
+      size = 3
+    ) +
+
+    geom_line(
+      data = subset(
+        plot_data,
+        Typ_przejazdu == "Mieszany"
+      ),
+      aes(
+        y =
+          Average.fuel.consumption.in.l.100km *
+          scale_factor,
+        group = 1
+      ),
+      color = "steelblue",
+      linewidth = 0.8
+    ) +
+
+    scale_y_continuous(
+
+      name =
+        "Średnie zużycie energii elektrycznej [kWh/100 km]",
+
+      sec.axis = sec_axis(
+        ~ . / scale_factor,
+        name =
+          "Średnie zużycie benzyny [l/100 km]"
+      )
+    ) +
+
+    scale_x_datetime(
+      date_breaks = "1 month",
+      date_labels = "%m.%Y"
+    ) +
+
+    labs(
+      title =
+        "Przejazdy elektryczne i mieszane w czasie",
+      x = "Data przejazdu"
+    ) +
+
+    theme_minimal() +
+
+    theme(
+
+      plot.title = element_text(
+        hjust = 0.5
+      ),
+
+      axis.text.x = element_text(
+        angle = 45,
+        hjust = 1
+      ),
+
+      axis.title.y.left = element_text(
+        color = "darkgreen"
+      ),
+
+      axis.title.y.right = element_text(
+        color = "steelblue"
+      )
+    )
+})
 
   # ========================================================
   # PODGLĄD TABELI
