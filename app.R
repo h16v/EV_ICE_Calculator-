@@ -1341,7 +1341,7 @@ annotate(
 
             name =
 
-              "Średnie zużycie benzyny [l/100 km]"
+              "Średnie zużycie benzyny w cyklu mieszanym [l/100 km]"
           )
       ) +
 
@@ -1417,8 +1417,8 @@ annotate(
         axis.title.y.right =
           element_text(
 
-            color =
-              COL_SPALINOWY,
+          color =
+      "darkorange4",
 
             face =
               "bold"
