@@ -1036,18 +1036,15 @@ server <- function(input, output, session) {
     )
 
 
-    mean_fuel <- mean(
+mean_fuel <- mean(
 
-      plot_data$Average.fuel.consumption.in.l.100km[
-        plot_data$Typ_przejazdu %in%
-          c(
-            "Mieszany",
-            "Spalinowy"
-          )
-      ],
+  plot_data$Average.fuel.consumption.in.l.100km[
+    plot_data$Typ_przejazdu ==
+      "Mieszany"
+  ],
 
-      na.rm = TRUE
-    )
+  na.rm = TRUE
+)
 
 
     mean_fuel_scaled <-
@@ -1266,63 +1263,63 @@ server <- function(input, output, session) {
       # ŚREDNIE SPALANIE
       # ----------------------------------------------------
 
-      geom_hline(
+geom_hline(
 
-        yintercept =
-          mean_fuel_scaled,
+  yintercept =
+    mean_fuel_scaled,
 
-        color =
-          COL_FUEL_MEAN,
+  color =
+    "darkorange3",
 
-        linetype =
-          "dashed",
+  linetype =
+    "dashed",
 
-        linewidth =
-          1.15
-      ) +
+  linewidth =
+    1.15
+) +
 
 
-      annotate(
+annotate(
 
-        "label",
+  "label",
 
-        x =
-          x_label,
+  x =
+    x_label,
 
-        y =
-          mean_fuel_scaled,
+  y =
+    mean_fuel_scaled,
 
-        label =
-          paste0(
+  label =
+    paste0(
 
-            "Średnie spalanie: ",
+      "Średnie spalanie w cyklu mieszanym: ",
 
-            round(
-              mean_fuel,
-              1
-            ),
+      round(
+        mean_fuel,
+        1
+      ),
 
-            " l/100 km"
-          ),
+      " l/100 km"
+    ),
 
-        color =
-          COL_FUEL_MEAN,
+  color =
+    "darkorange4",
 
-        fill =
-          "white",
+  fill =
+    "white",
 
-        label.size =
-          0.35,
+  label.size =
+    0.35,
 
-        hjust =
-          0,
+  hjust =
+    0,
 
-        vjust =
-          1.4,
+  vjust =
+    1.4,
 
-        size =
-          4.3
-      ) +
+  size =
+    4.3
+) +
 
 
       # ----------------------------------------------------
