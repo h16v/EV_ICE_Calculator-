@@ -52,9 +52,14 @@ ui <- fluidPage(
 
       hr(),
 
-      h4("Przebieg jazdy w czasie"),
-      plotOutput("timeline_plot", height = "500px"),
       hr(),
+
+h4("Przejazdy elektryczne i mieszane w czasie"),
+
+plotOutput(
+  "timeline_plot",
+  height = "500px"
+),
 
       h4("Podgląd danych"),
       tableOutput("table")
@@ -605,15 +610,20 @@ server <- function(input, output, session) {
       )
   })
 
-  # ========================================================
+# ========================================================
 # WYKRES PRZEJAZDÓW W CZASIE
+# niebieski = elektryczny
+# czerwony  = mieszany / benzyna
 # ========================================================
 
 output$timeline_plot <- renderPlot({
 
   trip <- data_processed()
 
-  # konwersja daty
+  # ------------------------------------------------------
+  # Konwersja daty
+  # ------------------------------------------------------
+
   trip$Data_przejazdu <- as.POSIXct(
     trip$End.of.trip,
     format = "%d.%m.%Y %H:%M"
@@ -624,9 +634,16 @@ output$timeline_plot <- renderPlot({
     order(trip$Data_przejazdu),
   ]
 
-  # tylko przejazdy elektryczne i mieszane
+
+  # ------------------------------------------------------
+  # Tylko przejazdy elektryczne i mieszane
+  # ------------------------------------------------------
+
   plot_data <- trip[
-    trip$Typ_przejazdu %in% c("Elektryczny", "Mieszany"),
+    trip$Typ_przejazdu %in% c(
+      "Elektryczny",
+      "Mieszany"
+    ),
   ]
 
   validate(
@@ -636,7 +653,11 @@ output$timeline_plot <- renderPlot({
     )
   )
 
-  # dane do skalowania drugiej osi
+
+  # ------------------------------------------------------
+  # Maksymalne wartości potrzebne do drugiej osi
+  # ------------------------------------------------------
+
   max_kwh <- max(
     plot_data$Average.electric.consumption.in.kWh.100km[
       plot_data$Typ_przejazdu == "Elektryczny"
@@ -651,16 +672,23 @@ output$timeline_plot <- renderPlot({
     na.rm = TRUE
   )
 
+
+  # współczynnik potrzebny do wyświetlenia dwóch skal
   scale_factor <- max_kwh / max_fuel
+
+
+  # ------------------------------------------------------
+  # Wykres
+  # ------------------------------------------------------
 
   ggplot(
     plot_data,
     aes(x = Data_przejazdu)
   ) +
 
-    # ----------------------------------------------------
-    # jazda elektryczna - lewa oś Y
-    # ----------------------------------------------------
+    # ====================================================
+    # PRZEJAZDY ELEKTRYCZNE
+    # ====================================================
 
     geom_col(
       data = subset(
@@ -670,16 +698,17 @@ output$timeline_plot <- renderPlot({
       aes(
         y = Average.electric.consumption.in.kWh.100km
       ),
-      fill = "darkgreen",
-      alpha = 0.75,
-      width = 0.7
+      fill = "blue",
+      width = 0.8,
+      alpha = 0.8
     ) +
 
-    # ----------------------------------------------------
-    # jazda mieszana - prawa oś Y
-    # ----------------------------------------------------
 
-    geom_point(
+    # ====================================================
+    # PRZEJAZDY MIESZANE - BENZYNA
+    # ====================================================
+
+    geom_col(
       data = subset(
         plot_data,
         Typ_przejazdu == "Mieszany"
@@ -689,47 +718,62 @@ output$timeline_plot <- renderPlot({
           Average.fuel.consumption.in.l.100km *
           scale_factor
       ),
-      color = "steelblue",
-      size = 3
+      fill = "red",
+      width = 0.8,
+      alpha = 0.8
     ) +
 
-    geom_line(
-      data = subset(
-        plot_data,
-        Typ_przejazdu == "Mieszany"
-      ),
-      aes(
-        y =
-          Average.fuel.consumption.in.l.100km *
-          scale_factor,
-        group = 1
-      ),
-      color = "steelblue",
-      linewidth = 0.8
-    ) +
+
+    # ====================================================
+    # DWIE OSIE Y
+    # ====================================================
 
     scale_y_continuous(
 
       name =
-        "Średnie zużycie energii elektrycznej [kWh/100 km]",
+        "Średnie zużycie energii [kWh/100 km]",
 
       sec.axis = sec_axis(
+
         ~ . / scale_factor,
+
         name =
           "Średnie zużycie benzyny [l/100 km]"
       )
     ) +
 
+
+    # ====================================================
+    # OŚ CZASU
+    # ====================================================
+
     scale_x_datetime(
+
       date_breaks = "1 month",
+
       date_labels = "%m.%Y"
     ) +
 
+
+    # ====================================================
+    # OPISY
+    # ====================================================
+
     labs(
+
       title =
         "Przejazdy elektryczne i mieszane w czasie",
+
+      subtitle =
+        "Niebieski = jazda elektryczna | Czerwony = jazda mieszana",
+
       x = "Data przejazdu"
     ) +
+
+
+    # ====================================================
+    # WYGLĄD
+    # ====================================================
 
     theme_minimal() +
 
@@ -739,17 +783,31 @@ output$timeline_plot <- renderPlot({
         hjust = 0.5
       ),
 
+      plot.subtitle = element_text(
+        hjust = 0.5
+      ),
+
       axis.text.x = element_text(
         angle = 45,
         hjust = 1
       ),
 
       axis.title.y.left = element_text(
-        color = "darkgreen"
+        color = "blue",
+        face = "bold"
+      ),
+
+      axis.text.y.left = element_text(
+        color = "blue"
       ),
 
       axis.title.y.right = element_text(
-        color = "steelblue"
+        color = "red",
+        face = "bold"
+      ),
+
+      axis.text.y.right = element_text(
+        color = "red"
       )
     )
 })
